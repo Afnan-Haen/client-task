@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 export default function DoctorDashboard({ user }: { user: any }) {
   const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   
   // Profile Form State
   const [specialization, setSpecialization] = useState('');
@@ -21,6 +22,8 @@ export default function DoctorDashboard({ user }: { user: any }) {
     try {
       const res = await fetch(`http://localhost:8000/doctor/profile/${user.id}`);
       if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
         setHasProfile(true);
         fetchRequests();
       } else {
@@ -64,6 +67,13 @@ export default function DoctorDashboard({ user }: { user: any }) {
       
       if (res.ok) {
         alert("Profile saved successfully!");
+        setProfile({
+          specialization,
+          experience,
+          available_from,
+          available_to,
+          about
+        });
         setHasProfile(true);
         fetchRequests();
       } else {
@@ -149,36 +159,72 @@ export default function DoctorDashboard({ user }: { user: any }) {
     );
   }
 
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const acceptedCount = requests.filter(r => r.status === 'accepted').length;
+
   return (
-    <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-      <h2 className="text-3xl font-bold mb-8 text-slate-900">Patient Requests</h2>
-      
-      {requests.length === 0 ? (
-        <p className="text-slate-500">You have no requests at the moment.</p>
-      ) : (
-        <div className="grid gap-6">
-          {requests.map(req => (
-            <div key={req.id} className="p-6 border rounded-2xl bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6">
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div>
+            <p className="text-slate-500 font-medium mb-1">Total Requests</p>
+            <h3 className="text-3xl font-bold text-slate-900">{requests.length}</h3>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xl">
+            {requests.length}
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div>
+            <p className="text-slate-500 font-medium mb-1">Pending</p>
+            <h3 className="text-3xl font-bold text-amber-600">{pendingCount}</h3>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 font-bold text-xl">
+            {pendingCount}
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center justify-between">
+          <div>
+            <p className="text-slate-500 font-medium mb-1">Accepted</p>
+            <h3 className="text-3xl font-bold text-emerald-600">{acceptedCount}</h3>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-xl">
+            {acceptedCount}
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Summary */}
+      <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
+        <h2 className="text-2xl font-bold mb-6 text-slate-900">My Profile Summary</h2>
+        
+        {profile && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
               <div>
-                <h3 className="text-xl font-bold text-slate-800">{req.full_name} <span className="text-sm font-normal text-slate-500">({req.age} yrs, {req.gender})</span></h3>
-                <p className="text-slate-600 mt-1"><span className="font-semibold">Condition:</span> {req.condition}</p>
-                <p className="text-slate-500 text-sm mt-2">Contact: {req.phone_number} | {req.email}</p>
+                <p className="text-sm text-slate-500 font-medium uppercase tracking-wider mb-1">Specialization</p>
+                <p className="text-lg font-semibold text-slate-900 capitalize">{profile.specialization}</p>
               </div>
-              <div className="flex flex-col items-start md:items-end gap-3">
-                <span className={`px-4 py-1 rounded-full text-sm font-semibold capitalize ${req.status === 'pending' ? 'bg-amber-100 text-amber-700' : req.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                  {req.status}
-                </span>
-                {req.status === 'pending' && (
-                  <div className="flex gap-2">
-                    <button onClick={() => handleUpdateStatus(req.id, 'accepted')} className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition-colors">Accept</button>
-                    <button onClick={() => handleUpdateStatus(req.id, 'rejected')} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors">Reject</button>
-                  </div>
-                )}
+              <div>
+                <p className="text-sm text-slate-500 font-medium uppercase tracking-wider mb-1">Experience</p>
+                <p className="text-lg font-semibold text-slate-900">{profile.experience} Years</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-500 font-medium uppercase tracking-wider mb-1">Availability</p>
+                <p className="text-lg font-semibold text-slate-900">{profile.available_from} - {profile.available_to}</p>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+            
+            <div>
+              <p className="text-sm text-slate-500 font-medium uppercase tracking-wider mb-2">About Me</p>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 h-full">
+                <p className="text-slate-700 italic">"{profile.about}"</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

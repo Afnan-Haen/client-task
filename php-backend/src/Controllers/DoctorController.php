@@ -68,7 +68,7 @@ class DoctorController{
             exit();
         }
     $db = Database::getConnection();
-    $stmt = $db->query("SELECT * FROM doctors");
+    $stmt = $db->query("SELECT d.*, u.email FROM doctors d JOIN users u ON d.user_id = u.id");
     $doctors = $stmt->fetchAll();
     echo json_encode($doctors);
     }
@@ -98,6 +98,31 @@ class DoctorController{
                 http_response_code(404);
                 echo json_encode(["message" => "Profile not found"]);
             }
+        } catch(\PDOException $e) {
+            http_response_code(500);
+            echo json_encode(["message" => "Database error: " . $e->getMessage()]);
+        }
+    }
+
+    public function getDoctorBySpecialization($specialization) {
+        $frontendUrl = getenv('FRONTEND_URL') ?: 'http://localhost:3000';
+        header('Access-Control-Allow-Origin: ' . $frontendUrl);
+        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization');
+        header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            http_response_code(200);
+            exit();
+        }
+
+        try {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT * FROM doctors WHERE specialization = :specialization");
+            $stmt->execute([':specialization' => $specialization]);
+            $doctors = $stmt->fetchAll();
+            echo json_encode($doctors);
         } catch(\PDOException $e) {
             http_response_code(500);
             echo json_encode(["message" => "Database error: " . $e->getMessage()]);

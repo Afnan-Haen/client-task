@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 export default function PatientProfile({ user }: { user: any }) {
     const [hasProfile, setHasProfile] = useState<boolean | null>(null);
     const [doctors, setDoctors] = useState<any[]>([]);
+    const [searchSpecialization, setSearchSpecialization] = useState("");
 
     // Form state
     const [fullName, setFullName] = useState("");
@@ -33,6 +34,23 @@ export default function PatientProfile({ user }: { user: any }) {
     const fetchDoctors = async () => {
         try {
             const res = await fetch(`http://localhost:8000/doctors`);
+            if (res.ok) {
+                const data = await res.json();
+                setDoctors(data);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleSearch = async () => {
+        if (!searchSpecialization.trim()) {
+            fetchDoctors();
+            return;
+        }
+
+        try {
+            const res = await fetch(`http://localhost:8000/doctors/specialization/${searchSpecialization.trim()}`);
             if (res.ok) {
                 const data = await res.json();
                 setDoctors(data);
@@ -156,7 +174,37 @@ export default function PatientProfile({ user }: { user: any }) {
 
     return (
         <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-            <h2 className="text-3xl font-bold mb-8 text-slate-900">Available Doctors</h2>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <h2 className="text-3xl font-bold text-slate-900">Available Doctors</h2>
+                
+                <div className="flex w-full md:w-auto gap-2">
+                    <input
+                        type="text"
+                        placeholder="Search specialization (e.g. cardiologist)"
+                        className="px-4 py-2 border rounded-xl flex-grow md:w-64"
+                        value={searchSpecialization}
+                        onChange={(e) => setSearchSpecialization(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    />
+                    <button 
+                        onClick={handleSearch}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-xl transition-colors font-medium"
+                    >
+                        Search
+                    </button>
+                    {searchSpecialization && (
+                        <button 
+                            onClick={() => {
+                                setSearchSpecialization("");
+                                fetchDoctors();
+                            }}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl transition-colors font-medium"
+                        >
+                            Clear
+                        </button>
+                    )}
+                </div>
+            </div>
             
             {doctors.length === 0 ? (
                 <p className="text-slate-500">No doctors available at the moment.</p>

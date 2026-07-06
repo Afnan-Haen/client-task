@@ -1,0 +1,1 @@
+so inside this controller folder i have auth controller, blogs controller, and so on what each does is they have their own entry point if i were to create a blog then i might need controller that handle the request GET, PUT, POST, DELETE so this and it tells to see if db exist or not if it exist tell the backend!

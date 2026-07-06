@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
@@ -92,6 +93,10 @@ export default function Login() {
             {message}
           </p>
         )}
+
+        <p className="mt-6 text-center text-sm text-slate-600">
+          Don't have an account? <Link href="/register" className="text-indigo-600 hover:underline font-medium">Register here</Link>
+        </p>
       </form>
     </div>
     </div>

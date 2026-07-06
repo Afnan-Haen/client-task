@@ -1,5 +1,5 @@
 {
-  "name": "php-backend",
+  "name": "project/php-backend",
   "description": "A simple PHP backend for user authentication.",
   "type": "project",
   "require": {

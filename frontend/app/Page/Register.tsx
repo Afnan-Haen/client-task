@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Register() {
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role:'' });
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,8 +26,9 @@ export default function Register() {
       const data = await response.json();
 
       if (response.ok) {
-        alert(data.message || 'Registration successful!');
+        alert(data.message || 'Registration successful! Please login.');
         setFormData({ name: '', email: '', password: '', role:'' });
+        router.push('/login');
       } else {
         alert(data.message || 'Registration failed.');
       }
@@ -88,6 +92,10 @@ export default function Register() {
             Register
           </button>
         </form>
+
+        <p className="mt-6 text-center text-sm text-slate-600">
+          Already have an account? <Link href="/login" className="text-indigo-600 hover:underline font-medium">Login here</Link>
+        </p>
       </div>
     </div>
   );

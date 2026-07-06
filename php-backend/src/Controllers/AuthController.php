@@ -79,7 +79,10 @@ class AuthController {
             $stmt->execute([':email' => $email]);
             $user = $stmt->fetch();
 
-            if ($user && password_verify($password, $user['password'])) {
+            if (!$user) {
+                http_response_code(404);
+                echo json_encode(['message' => 'No user detected. Please register first.']);
+            } else if (password_verify($password, $user['password'])) {
                 // In a production app, we would start a session or generate a JWT here.
                 // For this starter, we just return a success message.
                 echo json_encode([
@@ -92,7 +95,7 @@ class AuthController {
                 ]);
             } else {
                 http_response_code(401);
-                echo json_encode(['message' => 'Invalid email or password.']);
+                echo json_encode(['message' => 'Invalid password.']);
             }
         } catch (\PDOException $e) {
             http_response_code(500);
