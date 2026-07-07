@@ -2,9 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\Patient;
-use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\PatientService;
+use InvalidArgumentException;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,49 +12,25 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class PatientController extends AbstractController
 {
-    private EntityManagerInterface $entityManager;
+    private PatientService $patientService;
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(PatientService $patientService)
     {
-        $this->entityManager = $entityManager;
+        $this->patientService = $patientService;
     }
 
     #[Route('/patient/profile', name: 'api_patient_create_profile', methods: ['POST'])]
     public function CreatePatientProfile(Request $request): JsonResponse
     {
-        $input = json_decode($request->getContent(), true);
-
-        $full_name = $input['full_name'] ?? '';
-        $phone_number = $input['phone_number'] ?? '';
-        $age = $input['age'] ?? '';
-        $gender = $input['gender'] ?? '';
-        $condition = $input['condition'] ?? '';
-        $user_id = $input['user_id'] ?? '';
-
-        if (empty($full_name) || empty($phone_number) || empty($age) || empty($gender) || empty($condition) || empty($user_id)) {
-            return $this->json(["message" => "Missing fields"], 400);
-        }
+        $input = json_decode($request->getContent(), true) ?? [];
 
         try {
-            $userRepository = $this->entityManager->getRepository(User::class);
-            $user = $userRepository->find($user_id);
-
-            if (!$user) {
-                return $this->json(["message" => "User not found"], 404);
-            }
-
-            $patient = new Patient();
-            $patient->setUser($user);
-            $patient->setFullName($full_name);
-            $patient->setPhoneNumber($phone_number);
-            $patient->setAge((int) $age);
-            $patient->setGender($gender);
-            $patient->setCondition($condition);
-
-            $this->entityManager->persist($patient);
-            $this->entityManager->flush();
-
+            $this->patientService->createProfile($input);
             return $this->json(["message" => "Patient profile created successfully"], 201);
+        } catch (InvalidArgumentException $e) {
+            return $this->json(["message" => $e->getMessage()], 400);
+        } catch (RuntimeException $e) {
+            return $this->json(["message" => $e->getMessage()], $e->getCode() ?: 400);
         } catch (\Exception $e) {
             return $this->json(["message" => "Database error: " . $e->getMessage()], 500);
         }
@@ -64,22 +40,7 @@ class PatientController extends AbstractController
     public function getAllPatients(): JsonResponse
     {
         try {
-            $patientRepository = $this->entityManager->getRepository(Patient::class);
-            $patients = $patientRepository->findAll();
-            
-            $data = array_map(function(Patient $patient) {
-                return [
-                    'id' => $patient->getId(),
-                    'user_id' => $patient->getUser()->getId(),
-                    'full_name' => $patient->getFullName(),
-                    'phone_number' => $patient->getPhoneNumber(),
-                    'age' => $patient->getAge(),
-                    'gender' => $patient->getGender(),
-                    'condition' => $patient->getCondition(),
-                    'created_at' => $patient->getCreatedAt()->format('Y-m-d H:i:s')
-                ];
-            }, $patients);
-
+            $data = $this->patientService->getAllPatients();
             return $this->json($data);
         } catch (\Exception $e) {
             return $this->json(["message" => "Database error: " . $e->getMessage()], 500);
@@ -90,23 +51,10 @@ class PatientController extends AbstractController
     public function getPatientProfileByUserId(int $user_id): JsonResponse
     {
         try {
-            $patientRepository = $this->entityManager->getRepository(Patient::class);
-            $patient = $patientRepository->findOneBy(['user' => $user_id]);
-            
-            if ($patient) {
-                return $this->json([
-                    'id' => $patient->getId(),
-                    'user_id' => $patient->getUser()->getId(),
-                    'full_name' => $patient->getFullName(),
-                    'phone_number' => $patient->getPhoneNumber(),
-                    'age' => $patient->getAge(),
-                    'gender' => $patient->getGender(),
-                    'condition' => $patient->getCondition(),
-                    'created_at' => $patient->getCreatedAt()->format('Y-m-d H:i:s')
-                ]);
-            } else {
-                return $this->json(["message" => "Profile not found"], 404);
-            }
+            $data = $this->patientService->getProfileByUserId($user_id);
+            return $this->json($data);
+        } catch (RuntimeException $e) {
+            return $this->json(["message" => $e->getMessage()], $e->getCode() ?: 404);
         } catch (\Exception $e) {
             return $this->json(["message" => "Database error: " . $e->getMessage()], 500);
         }
